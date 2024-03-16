@@ -1,0 +1,4 @@
+kivymd
+kivy
+pillow
+numpy
