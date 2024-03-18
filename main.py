@@ -3,6 +3,8 @@ from kivymd.uix.button import MDRectangleFlatButton
 from kivymd.uix.gridlayout import MDGridLayout
 from kivymd.uix.card import MDCard
 from kivy.uix.popup import Popup
+from kivymd.uix.list import TwoLineIconListItem
+from kivymd.uix.list.list import MDList
 from kivymd.uix.anchorlayout import MDAnchorLayout
 from kivy.uix.screenmanager import ScreenManager, SlideTransition
 from kivymd.uix.textfield import MDTextField, MDTextFieldRect
@@ -315,7 +317,7 @@ class Front(MDScreen):
                                 md_bg_color = (0.15, 0.15, 0.16, 0.92)
                                 )
         self.todo_label = MDLabel(text="Todo list")
-        self.todo_card.add(self.todo_label)
+        self.todo_card.add_widget(self.todo_label)
         self.work_grid.add_widget(self.todo_card)
         self.work_layout.add_widget(self.work_grid)
 
@@ -375,8 +377,8 @@ class Front(MDScreen):
                                  on_release=self.activate_timer)
 
         self.calculator = MDIconButton(icon='calculator', size_hint=(0.001, 0.0013),
-                                       pos_hint={'center_y': 0.05, 'center_x': 0.4})
-                                   #    on_release=self.activate_calculator
+                                       pos_hint={'center_y': 0.05, 'center_x': 0.4},
+                                       on_release=self.activate_calculator)
 
         self.location = MDIconButton(icon='map-marker', size_hint=(0.001, 0.0013),
                                      pos_hint={'center_y': 0.05, 'center_x': 0.4})
@@ -394,16 +396,16 @@ class Front(MDScreen):
                                     title=f"Alarm has been scheduled",
                                     buttons=[MDFlatButton(text="ok", on_release=self.assurance)]
                                     )
-        # RIGHT SIDEBAR COMPONENT
+        """
+        THE RIGHT SIDE BAR
+        """
+        # The Calculator
         self.calculator = MDGridLayout(cols = 1, rows= 2, spacing = 10)
         entry_field = MDTextFieldRect(font_size = '16sp',
-                                      heigth = 40,
+                                      height = 40,
                                       padding = 20
                                       )
-        self.buttons = MDGridLayout(rows = 4, spacing = 7)
-
-        # adding buttons
-        # remember to change the text to icon
+        self.buttons = MDGridLayout(rows = 4, spacing = 7, cols = 4)
         self.button_1 = MDIconButton(icon = "1")
         self.button_2 = MDIconButton(icon = "2")
         self.button_3 = MDIconButton(icon = "3")
@@ -419,6 +421,33 @@ class Front(MDScreen):
         self.button_sub = MDIconButton(icon = "-")
         self.button_mult = MDIconButton(icon = "*")
         self.button_div = MDIconButton(icon="/")
+        self.button_clear = MDFlatButton(text = "Clear")
+
+        self.buttons.add_widget(self.button_1)
+        self.buttons.add_widget(self.button_2)
+        self.buttons.add_widget(self.button_3)
+        self.buttons.add_widget(self.button_4)
+        self.buttons.add_widget(self.button_5)
+        self.buttons.add_widget(self.button_6)
+        self.buttons.add_widget(self.button_7)
+        self.buttons.add_widget(self.button_8)
+        self.buttons.add_widget(self.button_9)
+        self.buttons.add_widget(self.button_0)
+        self.buttons.add_widget(self.button_add)
+        self.buttons.add_widget(self.button_sub)
+        self.buttons.add_widget(self.button_mult)
+        self.buttons.add_widget(self.button_div)
+        self.buttons.add_widget(self.button_clear)
+
+        self.calculator.add_widget(entry_field)
+        self.calculator.add_widget(self.buttons)
+
+        self.calculator_popup = Popup(title="Calculator", content=self.calculator)
+
+        def activate_calculator(self, instance):
+            self.calculator_popup.open()
+
+        # END OF THE CALCULATOR LAYOUT
 
     # adding all widgets
         # adding minor widget to the tab card
@@ -527,15 +556,19 @@ class Todo_app(MDScrollView):
         self.overall.add_widget(self.content)
         self.overall.add_widget(self.create_task)
         self.add_widget(self.overall)
+        self.delete_dialog = MDDialog(title="DELETE TASK", content="Are you sure you want to delete this task ?",
+                                      size_hint=(.5, .5),
+                                      buttons=[MDFlatButton(text="Cancel", on_press=lambda x: x.dismiss()),
+                                               MDFlatButton(text="Delete",
+                                                            on_press=lambda x: self.list.remove_widget())]
+                                      )
 
         # popup widget
         self.popup_content = MDGridLayout(cols = 1)
         self.popup_input = MDTextField(hint_text="Enter your task")
-        self.popup_selection_list = MDDropDownItem(
-        items=["High Priority Task", "Medium Priority Task ", "Low Priority Task"],
-        position="bottom",
-        width_mult=6,
-        )
+        self.popup_selection_list = MDDropDownItem(items=["High Priority Task", "Medium Priority Task ", "Low Priority Task"],
+                                                   position="bottom",
+                                                   width_mult=6)
         button_container = MDGridLayout()
         button_container.add_widget(MDFlatButton(text="Create", on_press=self.popup.dismiss))
         button_container.add_widget(MDFlatButton(text="Cancel", on_press=self.popup.dismiss))
@@ -544,12 +577,46 @@ class Todo_app(MDScrollView):
         self.popup_content.add_widget(self.popup_selection_list)
         self.popup_content.add_widget(button_container)
         self.popup = Popup(title="SET TASK", content = self.popup_content)
+        self.priority_level = str(self.popup_selection_list)
+        self.task = str(self.popup_input)
+        # END OF POPUP SECTION
 
+        self.list = MDList()
+
+    def add_new_widget(self):
+        new_widget = TwoLineIconListItem(text=self.popup_input,
+                                         secondary_text=self.priority_level,
+                                         on_press = self.open_delete_dialog,
+                                         icon="delete",
+                                         )
+        list.add_widget(new_widget)
+
+    def open_delete_dialog(self, instance):
+        self.delete_dialog.open()
+
+    def save_task(self):
+        contact_data = {
+            "task": self.task,
+            "priority": self.priority_level
+        }
+        try:
+            with open("todo.json", "r") as file:
+                    contacts = json.load(file)
+        except (FileNotFoundError, json.JSONDecodeError):
+                # If the file doesn't exist or is not valid JSON, start with an empty list
+                contacts = []
+
+        contacts.append(contact_data)
+
+        with open("todo.json", "w") as file:
+           json.dump(contacts, file, indent=2)
 
     def on_plus_button_click(self, instance):
         self.popup.open()
 
     def save_popup(self, instance):
+        self.add_new_widget()
+        self.save_task()
         self.popup.dismiss()
 
 
